@@ -893,37 +893,37 @@
   <div class="search-results-count" id="search-count"></div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('overview')">
+    <button class="tab active" data-tab="overview">
       <span style="color:#c9a84c">◆</span> Overview
     </button>
-    <button class="tab" onclick="switchTab('white')">
+    <button class="tab" data-tab="white">
       <span class="tab-dot" style="background:#e8d8b0"></span> White
     </button>
-    <button class="tab" onclick="switchTab('blue')">
+    <button class="tab" data-tab="blue">
       <span class="tab-dot" style="background:#5ab4e8"></span> Blue
     </button>
-    <button class="tab" onclick="switchTab('black')">
+    <button class="tab" data-tab="black">
       <span class="tab-dot" style="background:#9060d0"></span> Black
     </button>
-    <button class="tab" onclick="switchTab('red')">
+    <button class="tab" data-tab="red">
       <span class="tab-dot" style="background:#e86060"></span> Red
     </button>
-    <button class="tab" onclick="switchTab('green')">
+    <button class="tab" data-tab="green">
       <span class="tab-dot" style="background:#60cc80"></span> Green
     </button>
-    <button class="tab" onclick="switchTab('multicolor')">
+    <button class="tab" data-tab="multicolor">
       <span class="tab-dot" style="background:#c9a84c"></span> Multicolor
     </button>
-    <button class="tab" onclick="switchTab('artifacts')">
+    <button class="tab" data-tab="artifacts">
       <span class="tab-dot" style="background:#8a9bb0"></span> Artifacts
     </button>
-    <button class="tab" onclick="switchTab('lands')">
+    <button class="tab" data-tab="lands">
       <span class="tab-dot" style="background:#8b6930"></span> Lands
     </button>
-    <button class="tab" onclick="switchTab('archetypes')">
+    <button class="tab" data-tab="archetypes">
       <span style="color:#c9a84c">✦</span> Archetypes
     </button>
-    <button class="tab" onclick="switchTab('curve')">
+    <button class="tab" data-tab="curve">
       <span style="color:#c9a84c">▲</span> Curve
     </button>
   </div>
@@ -953,13 +953,6 @@
         <div class="curve-bars" id="curve-g"></div>
       </div>
     </div>
-
-    <div class="section-header">
-      <div class="section-title">All Cards</div>
-      <div class="section-line"></div>
-      <div class="section-count" id="all-count">loading…</div>
-    </div>
-    <div id="all-cards-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2px;"></div>
   </div>
 
   <!-- COLOR PANELS -->
@@ -1484,16 +1477,18 @@ renderFullCurve();
   buildCurve('curve-'+ck, combined, ck);
 });
 
-renderOverviewList();
-
 // ===================== TABS =====================
 function switchTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
   clearSearch();
 }
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
 
 // ===================== SEARCH =====================
 const searchInput = document.getElementById('search');
@@ -1519,17 +1514,6 @@ searchInput.addEventListener('input', () => {
       c.classList.add('match');
       c.classList.remove('no-match');
       matches++;
-    } else {
-      c.classList.remove('match');
-      c.classList.add('no-match');
-    }
-  });
-
-  // Also search overview clones
-  document.querySelectorAll('#all-cards-list .card-pill').forEach(c => {
-    if (c.dataset.name.includes(q)) {
-      c.classList.add('match');
-      c.classList.remove('no-match');
     } else {
       c.classList.remove('match');
       c.classList.add('no-match');
