@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unpowered Cube</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --w: #f5e6c8;
+    --u: #1a6b9a;
+    --b: #1a0a2e;
+    --r: #8b1a1a;
+    --g: #1a4d2e;
+    --gold: #c9a84c;
+    --artifact: #8a9bb0;
+    --land: #5c4a2a;
+    --bg: #0d0a14;
+    --surface: #13101e;
+    --border: #2a2040;
+    --text: #e8dcc8;
+    --muted: #7a6e8a;
+    --accent: #c9a84c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 70%, rgba(255,255,255,0.08) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.12) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(2px 2px at 35% 15%, rgba(201,168,76,0.15) 0%, transparent 100%),
+      radial-gradient(2px 2px at 65% 85%, rgba(201,168,76,0.1) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 64px 24px 40px;
+    position: relative;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .mana-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .mana-sym {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+  .mana-sym:hover { transform: scale(1.3); }
+  .sym-w { background: #e8d8b0; color: #4a3a1a; box-shadow: 0 0 12px rgba(232,216,176,0.3); }
+  .sym-u { background: #1a6b9a; color: #d0eeff; box-shadow: 0 0 12px rgba(26,107,154,0.4); }
+  .sym-b { background: #2d1a4a; color: #d0b8ff; box-shadow: 0 0 12px rgba(77,40,130,0.4); }
+  .sym-r { background: #8b1a1a; color: #ffd0d0; box-shadow: 0 0 12px rgba(139,26,26,0.4); }
+  .sym-g { background: #1a4d2e; color: #b0ffd0; box-shadow: 0 0 12px rgba(26,77,46,0.4); }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #e8c87a 0%, #f5e6c8 40%, #c9a84c 70%, #8b6914 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeDown 0.8s 0.1s ease both;
+    text-shadow: none;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    animation: fadeDown 0.8s 0.2s ease both;
+  }
+
+  .header-rule {
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 20px auto 0;
+    animation: fadeDown 0.8s 0.3s ease both;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0 0 40px;
+    animation: fadeUp 0.8s 0.4s ease both;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .stat-num {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .stat-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    margin: 0 auto 32px;
+    max-width: 500px;
+    position: relative;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    padding: 14px 48px 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 18px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+  }
+
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    right: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 18px;
+    pointer-events: none;
+  }
+
+  .search-results-count {
+    text-align: center;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 24px;
+    min-height: 20px;
+    transition: opacity 0.2s;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    overflow-x: auto;
+    animation: fadeUp 0.8s 0.5s ease both;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .tab-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* COLOR SECTIONS */
+  .color-section {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    color: var(--text);
+  }
+
+  .section-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* CMC LANES */
+  .cmc-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  @media (max-width: 900px) {
+    .cmc-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .cmc-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .cmc-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .cmc-header {
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cmc-num { font-weight: 700; }
+  .cmc-total { opacity: 0.5; }
+
+  .cmc-cards { padding: 8px; }
+
+  .card-pill {
+    display: block;
+    padding: 5px 8px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-family: 'Crimson Pro', serif;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, opacity 0.2s;
+    border: 1px solid transparent;
+    line-height: 1.3;
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+  }
+
+  .card-pill:hover {
+    background: rgba(201,168,76,0.08);
+    border-color: rgba(201,168,76,0.2);
+    transform: translateX(2px);
+    color: var(--gold);
+  }
+
+  .card-pill.hidden { display: none; }
+
+  /* Color tints for cards */
+  .tint-w .card-pill { border-left: 2px solid rgba(232,216,176,0.4); }
+  .tint-u .card-pill { border-left: 2px solid rgba(26,107,154,0.6); }
+  .tint-b .card-pill { border-left: 2px solid rgba(100,40,160,0.5); }
+  .tint-r .card-pill { border-left: 2px solid rgba(180,40,40,0.5); }
+  .tint-g .card-pill { border-left: 2px solid rgba(40,130,70,0.5); }
+  .tint-gold .card-pill { border-left: 2px solid rgba(201,168,76,0.6); }
+  .tint-artifact .card-pill { border-left: 2px solid rgba(138,155,176,0.5); }
+  .tint-land .card-pill { border-left: 2px solid rgba(120,90,40,0.5); }
+
+  /* Color header accents */
+  .color-w .cmc-header { background: rgba(232,216,176,0.06); }
+  .color-u .cmc-header { background: rgba(26,107,154,0.1); }
+  .color-b .cmc-header { background: rgba(60,20,100,0.1); }
+  .color-r .cmc-header { background: rgba(139,26,26,0.1); }
+  .color-g .cmc-header { background: rgba(26,77,46,0.1); }
+  .color-gold .cmc-header { background: rgba(201,168,76,0.08); }
+  .color-artifact .cmc-header { background: rgba(138,155,176,0.08); }
+  .color-land .cmc-header { background: rgba(92,74,42,0.1); }
+
+  /* GUILD GRID */
+  .guild-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 900px) { .guild-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 600px) { .guild-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .guild-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .guild-card:hover { border-color: var(--gold); }
+
+  .guild-header {
+    padding: 10px 14px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .guild-pips {
+    display: flex;
+    gap: 3px;
+  }
+
+  .pip {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  .guild-body { padding: 8px 12px; }
+
+  .guild-body .card-pill {
+    font-size: 13px;
+    padding: 4px 6px;
+  }
+
+  /* ARCHETYPES */
+  .archetype-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .archetype-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .archetype-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .archetype-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+
+  .archetype-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .archetype-guild {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .archetype-desc {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #c8bca8;
+    font-style: italic;
+  }
+
+  .archetype-keys {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .key-tag {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+  }
+
+  /* CURVE BARS */
+  .curve-section {
+    margin-bottom: 48px;
+  }
+
+  .curve-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .curve-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .curve-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .curve-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 60px;
+  }
+
+  .curve-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .curve-bar {
+    width: 100%;
+    border-radius: 2px 2px 0 0;
+    min-height: 2px;
+    transition: height 0.4s ease;
+    position: relative;
+  }
+
+  .curve-bar-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .curve-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* PANEL TABS */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeUp 0.4s ease both; }
+
+  /* CARD TOOLTIP */
+  .tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+  }
+
+  .tooltip.visible { opacity: 1; }
+  .tooltip-name { font-family: 'Cinzel Decorative', serif; font-size: 13px; color: var(--gold); margin-bottom: 4px; }
+  .tooltip-info { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 64px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+
+  .color-pip-w { color: #e8d8b0; }
+  .color-pip-u { color: #5ab4e8; }
+  .color-pip-b { color: #b090e0; }
+  .color-pip-r { color: #e86060; }
+  .color-pip-g { color: #60cc80; }
+
+  /* Highlight for search */
+  .card-pill.match { background: rgba(201,168,76,0.06); }
+  .card-pill.no-match { opacity: 0.2; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mana-row">
+    <div class="mana-sym sym-w">W</div>
+    <div class="mana-sym sym-u">U</div>
+    <div class="mana-sym sym-b">B</div>
+    <div class="mana-sym sym-r">R</div>
+    <div class="mana-sym sym-g">G</div>
+  </div>
+  <h1>Unpowered Cube</h1>
+  <div class="subtitle">Cube Draft · Custom Format</div>
+  <div class="header-rule"></div>
+</header>
+
+<div class="container">
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="total-count">540</div><div class="stat-label">Total Cards</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Colors</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Guilds</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Archetypes</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">Draft Seats</div></div>
+  </div>
+
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Search cards…" autocomplete="off" spellcheck="false">
+    <div class="search-icon">⌕</div>
+  </div>
+  <div class="search-results-count" id="search-count"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">
+      <span style="color:#c9a84c">◆</span> Overview
+    </button>
+    <button class="tab" onclick="switchTab('white')">
+      <span class="tab-dot" style="background:#e8d8b0"></span> White
+    </button>
+    <button class="tab" onclick="switchTab('blue')">
+      <span class="tab-dot" style="background:#5ab4e8"></span> Blue
+    </button>
+    <button class="tab" onclick="switchTab('black')">
+      <span class="tab-dot" style="background:#9060d0"></span> Black
+    </button>
+    <button class="tab" onclick="switchTab('red')">
+      <span class="tab-dot" style="background:#e86060"></span> Red
+    </button>
+    <button class="tab" onclick="switchTab('green')">
+      <span class="tab-dot" style="background:#60cc80"></span> Green
+    </button>
+    <button class="tab" onclick="switchTab('multicolor')">
+      <span class="tab-dot" style="background:#c9a84c"></span> Multicolor
+    </button>
+    <button class="tab" onclick="switchTab('artifacts')">
+      <span class="tab-dot" style="background:#8a9bb0"></span> Artifacts
+    </button>
+    <button class="tab" onclick="switchTab('lands')">
+      <span class="tab-dot" style="background:#8b6930"></span> Lands
+    </button>
+    <button class="tab" onclick="switchTab('archetypes')">
+      <span style="color:#c9a84c">✦</span> Archetypes
+    </button>
+    <button class="tab" onclick="switchTab('curve')">
+      <span style="color:#c9a84c">▲</span> Curve
+    </button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="panel-overview" class="panel active">
+    <div class="curve-grid" style="margin-bottom:40px">
+      <!-- overview mini curves per color -->
+      <div class="curve-card">
+        <div class="curve-title"><span style="color:#e8d8b0">◈</span> White</div>
+        <div class="curve-bars" id="curve-w"></div>
+      </div>
+      <div class="curve-card">
+        <div class="curve-title"><span style="color:#5ab4e8">◈</span> Blue</div>
+        <div class="curve-bars" id="curve-u"></div>
+      </div>
+      <div class="curve-card">
+        <div class="curve-title"><span style="color:#9060d0">◈</span> Black</div>
+        <div class="curve-bars" id="curve-b"></div>
+      </div>
+      <div class="curve-card">
+        <div class="curve-title"><span style="color:#e86060">◈</span> Red</div>
+        <div class="curve-bars" id="curve-r"></div>
+      </div>
+      <div class="curve-card">
+        <div class="curve-title"><span style="color:#60cc80">◈</span> Green</div>
+        <div class="curve-bars" id="curve-g"></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">All Cards</div>
+      <div class="section-line"></div>
+      <div class="section-count" id="all-count">loading…</div>
+    </div>
+    <div id="all-cards-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2px;"></div>
+  </div>
+
+  <!-- COLOR PANELS -->
+  <div id="panel-white" class="panel"></div>
+  <div id="panel-blue" class="panel"></div>
+  <div id="panel-black" class="panel"></div>
+  <div id="panel-red" class="panel"></div>
+  <div id="panel-green" class="panel"></div>
+  <div id="panel-multicolor" class="panel"></div>
+  <div id="panel-artifacts" class="panel"></div>
+  <div id="panel-lands" class="panel"></div>
+
+  <!-- ARCHETYPES -->
+  <div id="panel-archetypes" class="panel">
+    <div class="archetype-grid" id="archetype-grid"></div>
+  </div>
+
+  <!-- CURVE -->
+  <div id="panel-curve" class="panel">
+    <div class="curve-grid" id="full-curve-grid"></div>
+  </div>
+</div>
+
+<footer>
+  Unpowered Cube · Interactive Viewer · <span id="year"></span>
+</footer>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name" id="tt-name"></div>
+  <div class="tooltip-info" id="tt-info"></div>
+</div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// ===================== DATA =====================
+const CUBE = {
+  white: {
+    color: 'w',
+    label: 'White',
+    accent: '#e8d8b0',
+    creatures: {
+      '1': ['Boros Elite','Thraben Inspector','Elite Arrester','Descendant of Storms','Indebted Spirit','Novice Inspector','Usher of the Fallen'],
+      '2': ['Spirited Companion','Drannith Healer','Daring Skyjek','Syndic of Tithes','Sunhome Stalwart','Grateful Apparition','Martyr for the Cause'],
+      '3': ['Seller of Songbirds','Blade Instructor','Ministrant of Obligation','Ardenvale Tactician','Priest of Ancient Lore','Kemba, Kha Regent','Inspiring Overseer'],
+      '4': ['Azorius Justiciar','Knight of Obligation','Civic Stalwart','Parhelion Patrol','Glimmerpoint Stag'],
+      '5': ["Syr Alin, the Lion's Claw",'Sunblade Samurai','Riling Dawnbreaker','Geist-Honored Monk','Scion of Vitu-Ghazi'],
+      '6+': ['Urbis Protector','Eagles of the North'],
+      'X': ['Mikaeus, the Lunarch'],
+    },
+    spells: {
+      '1': ['Ethereal Armor','Condemn','Gird for Battle','Wake the Reflections','Ephemerate','Path to Exile','Reprieve','Journey to Nowhere','Momentary Blink'],
+      '2': ['Unbounded Potential','Staff of the Storyteller','All That Glitters','Hopeful Vigil','Ancestral Blade','Angelic Ascension'],
+      '3': ['Rootborn Defenses','Touch the Spirit Realm','Oblivion Ring','Muster the Departed'],
+      '4': ["Faith's Fetters",'Breath of Life','Wrath of God'],
+      '5': ["Knightly Valor"],
+      '6+': ["Trostani's Judgment",'Imperial Oath'],
+    }
+  },
+  blue: {
+    color: 'u',
+    label: 'Blue',
+    accent: '#5ab4e8',
+    creatures: {
+      '1': ['Cloudfin Raptor','Thoughtbound Phantasm','Pteramander','Spectral Sailor'],
+      '2': ['Faerie Vandal','Hypnotic Sprite','Nightveil Sprite','Unwelcome Sprite','Aven Eternal','Riftwing Cloudskate','Thrummingbird','Aquatic Alchemist','Augur of Bolas','Flux Channeler'],
+      '3': ['Matoya, Archon Elder','Simic Fluxmage','Rune-Sealed Wall','Animating Faerie','Cruel Witness','Tekuthal, Inquiry Dominus'],
+      '4': ['Murmuring Mystic','Twining Twins','Thunder Drake','Lightshell Duo'],
+      '5': ['Watcher in the Mist','Eternal Skylord','Whirlwing Stormbrood'],
+      '6+': ["Kiora's Dambreaker",'Dream Eater','Dirgur Island Dragon'],
+    },
+    spells: {
+      '1': ['Blustersquall','Rapid Hybridization','Opt','Consider','Otherworldly Gaze','Witching Well','Silent Departure','Cryoshatter'],
+      '2': ['Remand','Curate','Unexplained Disappearance','The Modern Age','Mana Leak','Into the Roil','Memory Lapse','Spreading Seas','Counterspell','Search for Azcanta'],
+      '3': ['Swallowed by Leviathan','Narset, Parter of Veils','Dramatic Accusation','Ephara\'s Dispersal','Tezzeret\'s Gambit'],
+      '4': ['Spellgyre','Kasmina, Enigmatic Mentor'],
+      '5': ['Behold the Unspeakable','Lórien Revealed'],
+      '6+': ['Lay Claim','Sublime Epiphany','Shark Typhoon'],
+    }
+  },
+  black: {
+    color: 'b',
+    label: 'Black',
+    accent: '#b090e0',
+    creatures: {
+      '1': ['Thrull Parasite','Cult Conscript','Foulmire Knight','Dockside Chef','Vampire of the Dire Moon','Faerie Dreamthief',"Stitcher's Supplier",'Umbral Collar Zealot'],
+      '2': ['Dusk Legion Zealot','Desperate Bloodseeker','Whispering Snitch','Orzhov Enforcer','Lazotep Reaver','Order of Midnight','Sinister Starfish'],
+      '3': ['Dread Reveler','Appendage Amalgam','Heirloom Auntie','Starlit Soothsayer','Boneyard Mycodrax','Phyrexian Rager'],
+      '4': ['Herald of the Dreadhorde','Nekrataal','Undercity Scavenger'],
+      '5': ['Blade Juggler','Syr Konrad, the Grim','Doom Whisperer'],
+      '6+': ['Troll of Khazad-dûm'],
+      'X': ["Black Sun's Zenith"],
+    },
+    spells: {
+      '1': ['Grim Bauble','Phyrexian Reclamation','Bone Shards','Village Rites','You Are Already Dead','Tortured Existence','Ghost Lantern','Vendetta','Blood Fountain'],
+      '2': ['Ultimate Price','Drown in Ichor','Plumb the Forbidden','Go for the Throat','Davriel, Rogue Shadowmage','Moan of the Unhallowed'],
+      '3': ['Stab Wound','Murder','Dismember','Diresight','Assassin\'s Ink'],
+      '4': ['The Grim Captain\'s Locker','Price of Fame','Dread Return','Soul Enervation'],
+      '5': ['Deadly Visit','Spread the Sickness','Unburial Rites'],
+      '6+': ['Liliana, Dreadhorde General','Army of the Damned','Stir the Sands'],
+    }
+  },
+  red: {
+    color: 'r',
+    label: 'Red',
+    accent: '#e86060',
+    creatures: {
+      '1': ['Kumano Faces Kakkazan','Grim Initiate',"Dragon's Rage Channeler",'Simian Sling','Rabbit Battery','Goblin Banneret','Tin Street Dodger','Fanatical Firebrand','Young Pyromancer','Monastery Swiftspear'],
+      '2': ['Embereth Shieldbreaker','Burning Prophet','Rimrock Knight','Firefist Striker','Drannith Stinger','Heartfire Immolator','Sanguinary Mage'],
+      '3': ['Guttersnipe','Splatter Thug','Wojek Bodyguard','Clamor Shaman','Spellgorger Weird','Bonecrusher Giant'],
+      '4': ['Bloodfray Giant','Rubblebelt Maaka','Dreadhorde Twins','Twinshot Sniper','Longshot, Rebel Bowman','Grabby Giant'],
+      '5': ['Zealous Conscripts','Quakefoot Cyclops',"Syr Carah, the Bold",'Goldspan Dragon'],
+      '6+': ['Amethyst Dragon','Oliphaunt'],
+    },
+    spells: {
+      '1': ['Firebolt','Lightning Bolt','Dynacharge','Weapon Surge','Strike it Rich','Faithless Looting','Fire Magic','Burst Lightning','Dragon Mantle'],
+      '2': ["Jaya's Greeting",'Stormshriek','Lava Coil','Cori-Steel Cutter'],
+      '3': ['Act of Treason','Feral Volt','Light Up the Stage','Skewer the Critics'],
+      '4': ['Chandra, Torch of Defiance','Charge','Big Score','Mizzium Mortars','Fling'],
+      '5': ['Jaya, Venerated Firemage','Deem Worthy'],
+      '6+': ['Inescapable Blaze'],
+    }
+  },
+  green: {
+    color: 'g',
+    label: 'Green',
+    accent: '#60cc80',
+    creatures: {
+      '1': ['Elves of Deep Shadow',"Centaur's Herald",'Experiment One','Arbor Elf','Rubblebelt Maverick','Llanowar Elves','Haywire Mite','Cankerbloom'],
+      '2': ['Drudge Beetle','Basking Broodscale','Kraul Harpooner','Bamboo Grove Archer','Paradise Druid','Pollenbright Druid'],
+      '3': ['Excavation Mole','Slaughterhorn','Evolution Sage','Evolution Witness','Eternal Witness','Jewel Thief','Splinterfright'],
+      '4': ['Temperamental Oozewagg','Golgari Raiders','Bloom Hulk','Mowu, Loyal Companion','Kronch Wrangler','Bannerhide Krushok','Jukai Preserver','Deadbridge Goliath','Polukranos Reborn'],
+      '5': ['Rampaging Rendhorn','Trollbred Guardian','Blossom Prancer','Keeper of Fables'],
+      '6+': ['Generous Ent','Greater Tanuki','Somberwald Beastmaster'],
+      'X': ['Spinning Wheel Kick'],
+    },
+    spells: {
+      '1': ['Utopia Sprawl','Giant Growth','Rancor','Snakeskin Veil','Malevolent Rumble','Saproling Migration'],
+      '2': ['Farseek','Commune with the Gods','Smell Fear','Titanic Brawl'],
+      '3': ['Jiang Yanggu, Wildcrafter','Shattered Wings','Season of Renewal','Bow of Nylea'],
+      '4': ['Outmuscle','Beast Attack','Spider Spawning','Boar Umbra'],
+      '5': ['Grizzly Fate','Vivien Reid'],
+      '6+': ['Roar of the Wurm'],
+    }
+  }
+};
+
+const MULTICOLOR = {
+  simic: { label:'Simic', pips:['u','g'], cards:['Simic Guildmage','Scuttling Sentinel','Kiora, Behemoth Beckoner','Zegana, Utopian Speaker','Prime Speaker Zegana','Fathom Mage','Simic Charm','Colossal Skyturtle','Combine Guildmage','Frilled Mystic','Sharktocrab','Primal Empathy','Glowspore Shaman'] },
+  selesnya: { label:'Selesnya', pips:['w','g'], cards:['Sundering Growth','Selesnya Guildmage','Growing Ranks','Armada Wurm','Collective Blessing','Advent of the Wurm','Call of the Conclave',"Trostani's Summoner",'Vitu-Ghazi Guildmage','Buried in the Garden','Good-Fortune Unicorn','Conclave Cavalier'] },
+  golgari: { label:'Golgari', pips:['b','g'], cards:['Golgari Guildmage','Tribune of Rot','Hag Hedge-Mage','Sludge Titan','Underrealm Lich','Casualties of War',"Assassin's Trophy",'Golgari Findbroker','Deathsprout','Grisly Salvage','Varolz, the Scar-Striped','Leyline Prowler','Broodheart Engine'] },
+  orzhov: { label:'Orzhov', pips:['w','b'], cards:['Unmake','Gwyllion Hedge-Mage','Syndicate Heavy','Mortify','Aryel, Knight of Windgrace','Basilica Bell-Haunt','Despark','Hidden Stockpile','Ashen Rider','Ethereal Absolution','Seraph of the Scales','No More Lies'] },
+  azorius: { label:'Azorius', pips:['w','u'], cards:['Azorius Guildmage','Plumeveil','Migratory Route','Sphinx of New Prahv','Senate Guildmage',"Dovin's Acuity",'Supreme Verdict','Cloudblazer','Dream Trawler','Jubilant Skybonder','Dovin, Hand of Control','Venser, the Sojourner'] },
+  boros: { label:'Boros', pips:['r','w'], cards:['Boros Guildmage','Nahiri, Storm of Stone','Ordruun Mentor','Lightning Helix','Truefire Captain','Boros Challenger','Skyknight Legionnaire','Heroic Reinforcements','Assemble the Legion','Aurelia, Exemplar of Justice','Deafening Clarion',"Tajic, Legion's Edge"] },
+  rakdos: { label:'Rakdos', pips:['b','r'], cards:['Rakdos Guildmage','Rakdos Cackler','Angrath, Captain of Chaos','Fireblade Artist','Rakdos Firewheeler','Mayhem Devil','Grave Upheaval','Theater of Horrors','Bituminous Blast','Bedevil','Rakdos, Patron of Chaos','Terminate'] },
+  izzet: { label:'Izzet', pips:['u','r'], cards:['Saheeli, Sublime Artificer','Frostburn Weird','Ecstatic Electromancer','Improbable Alliance','Melek, Izzet Paragon','Crackling Drake','Third Path Iconoclast','Expressive Iteration','Ral Zarek','Niv-Mizzet, Parun','Lutri, the Spellchaser','Dominus of Fealty'] },
+  gruul: { label:'Gruul', pips:['r','g'], cards:['Gruul Guildmage','Burning-Tree Emissary','Samut, Tyrant Smasher','Stampede Surfer','Zhur-Taa Goblin','Skarrg Guildmage','Sunder Shaman','Child of the Pack','Rhythm of the Wild','Domri, Anarch of Bolas','Ruric Thar, the Unbowed','Bloodbraid Challenger'] },
+  dimir: { label:'Dimir', pips:['u','b'], cards:['Dimir Guildmage','Scarscale Ritual','Mind Drill Assailant','Disinformation Campaign','House Guildmage','Nightveil Predator','Thought Erasure','Coerced to Kill','Enter the God-Eternals','Tezzeret, Agent of Bolas','Baleful Strix','Havengul Lich'] },
+  fivecolor: { label:'5-Color', pips:['w','u','b','r','g'], cards:['Nicol Bolas, Dragon-God','Niv-Mizzet Reborn','The Kami War','Cruel Ultimatum','Two-Headed Hellkite'] }
+};
+
+const ARTIFACTS = {
+  '0': ['Gingerbrute'],
+  '1': ['Lunatic Pandora','Synod Sanctum',"Wizard's Rockets",'Pyrite Spellbomb','Bonesplitter','Horizon Spellbomb','Iron Apprentice','Viridian Longbow','Basilisk Collar','Elixir of Immortality','Bag of Holding','Golden Egg','Buried Treasure',"Noble's Purse",'Coastal Bulwark','Ornithopter of Paradise','Containment Construct','Contagion Clasp'],
+  '2': ['Boros Signet','Dimir Signet','Golgari Signet','Selesnya Signet','Gruul Signet','Izzet Signet','Orzhov Signet','Azorius Signet','Rakdos Signet','Simic Signet','Case of the Shattered Pact'],
+  '3': ['Circuit Mender','Sterling Hound',"Pilgrim's Eye",'Tumble Magnet','Haunted Cloak','Surge Conductor','Nettlecyst','Burnished Hart'],
+  '4': ['Firemind Vessel','Serrated Arrows','Hedron Archive','Towashi Guide-Bot','Weapon Rack','Lux Cannon','Bonehoard','Grimoire of the Dead'],
+  '5': ['Enchanted Carriage','Tome of the Guildpact','Meteor Sword'],
+  '6+': ['Contagion Engine','Ugin, the Ineffable'],
+  'X': ['Everflowing Chalice'],
+};
+
+const LANDS = {
+  simic: ['Tropical Island','Misty Rainforest','Hedge Maze','Breeding Pool','Rain-Slicked Copse','Hinterland Harbor'],
+  selesnya: ['Savannah','Windswept Heath','Lush Portico','Temple Garden','Scattered Groves','Sunpetal Grove'],
+  golgari: ['Bayou','Verdant Catacombs','Underground Mortuary','Overgrown Tomb','Festering Thicket','Restless Cottage'],
+  orzhov: ['Scrubland','Marsh Flats','Shadowy Backstreet','Godless Shrine','Temple of Silence','Isolated Chapel'],
+  azorius: ['Tundra','Flooded Strand','Meticulous Archive','Hallowed Fountain','Irrigated Farmland','Celestial Colonnade'],
+  boros: ['Plateau','Arid Mesa','Elegant Parlor','Sacred Foundry','Glittering Massif','Clifftop Retreat'],
+  rakdos: ['Badlands','Bloodstained Mire','Raucous Theater','Blood Crypt','Canyon Slough','Dragonskull Summit'],
+  izzet: ['Volcanic Island','Scalding Tarn','Thundering Falls','Steam Vents','Temple of Epiphany','Sulfur Falls'],
+  gruul: ['Taiga','Wooded Foothills','Commercial District','Stomping Ground','Sheltered Thicket','Raging Ravine'],
+  dimir: ['Underground Sea','Polluted Delta','Undercity Sewers','Watery Grave','Fetid Pools','Creeping Tar Pit'],
+  trilands: ["Jetmir's Garden",'Savai Triome','Indatha Triome','Zagoth Triome','Ketria Triome','Raugrin Triome',"Spara's Headquarters","Raffine's Tower","Xander's Lounge","Ziatora's Proving Ground"],
+};
+
+const ARCHETYPES = [
+  { name:'Skies', guild:'Azorius (W/U)', color:'#a0c8e8', desc:'Tempo-based flying strategy. Develop cheap flyers and protect them with interaction, closing out games before opponents stabilize.', keys:['Flying','Blink','Tempo'] },
+  { name:'Sacrifice', guild:'Rakdos (B/R)', color:'#c86060', desc:'Generate value by repeatedly sacrificing creatures to trigger death effects and card advantage engines.', keys:['Aristocrats','Recursion','Drain'] },
+  { name:'Tokens', guild:'Selesnya (G/W)', color:'#c8e0b0', desc:'Flood the board with token creatures, then pump them with anthems or sacrifice them for burst damage.', keys:['Go Wide','Anthems','Convoke'] },
+  { name:'Reanimator', guild:'Orzhov (W/B)', color:'#c0a8d8', desc:'Fill the graveyard early, then cheat large threats into play with reanimation spells.', keys:['Graveyard','Reanimate','Self-Mill'] },
+  { name:'Proliferate', guild:'Simic (G/U)', color:'#80d8c0', desc:'Build up +1/+1 counters and loyalty counters, then accelerate them with Proliferate effects.', keys:['+1/+1 Counters','Proliferate','Value'] },
+  { name:'Spells Matter', guild:'Izzet (U/R)', color:'#80c0e8', desc:'Fill your deck with cheap instants and sorceries to trigger prowess-style creatures and cantrip engines.', keys:['Prowess','Cantrips','Instants'] },
+  { name:'Graveyard Midrange', guild:'Golgari (B/G)', color:'#80b880', desc:'Trade resources early with efficient creatures and removal, then leverage graveyard recursion to outvalue opponents.', keys:['Undergrowth','Dredge','Midrange'] },
+  { name:'Aggro Tokens', guild:'Boros (R/W)', color:'#e8c080', desc:'Apply maximum early pressure with cheap creatures and combat tricks, finishing with direct damage.', keys:['Aggro','Combat Tricks','Burn'] },
+  { name:'Stompy', guild:'Gruul (R/G)', color:'#c0e880', desc:'Accelerate mana with green ramp creatures, then deploy oversized threats that attack from multiple angles.', keys:['Ramp','Trample','Fatties'] },
+  { name:'Control', guild:'Dimir (U/B)', color:'#8080c8', desc:'Answer threats efficiently with removal and counterspells, drawing ahead into card advantage engines to close with large finishers.', keys:['Control','Card Draw','Finishers'] },
+];
+
+// ===================== HELPERS =====================
+const pipColor = { w:'#e8d8b0', u:'#5ab4e8', b:'#9060d0', r:'#e86060', g:'#60cc80' };
+const barColor = { w:'rgba(232,216,176,0.7)', u:'rgba(90,180,232,0.7)', b:'rgba(144,96,208,0.7)', r:'rgba(232,96,96,0.7)', g:'rgba(96,204,128,0.7)' };
+
+function makeCard(name, extraClass='') {
+  const el = document.createElement('a');
+  el.className = `card-pill ${extraClass}`;
+  el.textContent = name;
+  el.href = `https://scryfall.com/search?q=${encodeURIComponent(name)}`;
+  el.target = '_blank';
+  el.rel = 'noopener';
+  el.dataset.name = name.toLowerCase();
+  el.addEventListener('mouseenter', showTooltip);
+  el.addEventListener('mouseleave', hideTooltip);
+  el.addEventListener('mousemove', moveTooltip);
+  return el;
+}
+
+const tooltip = document.getElementById('tooltip');
+const ttName = document.getElementById('tt-name');
+const ttInfo = document.getElementById('tt-info');
+
+function showTooltip(e) {
+  ttName.textContent = e.currentTarget.textContent;
+  ttInfo.textContent = 'Click to view on Scryfall →';
+  tooltip.classList.add('visible');
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+function moveTooltip(e) {
+  let x = e.clientX + 16, y = e.clientY - 10;
+  if (x + 260 > window.innerWidth) x = e.clientX - 276;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+function buildCMCSection(cmcData, colorKey, label) {
+  const cmcLabels = ['1','2','3','4','5','6+','X'];
+  const section = document.createElement('div');
+  section.className = 'color-section';
+
+  const cards = [];
+  const colEls = [];
+
+  const grid = document.createElement('div');
+  grid.className = 'cmc-grid';
+
+  cmcLabels.forEach(cmc => {
+    const col = document.createElement('div');
+    col.className = `cmc-col color-${colorKey}`;
+    const list = cmcData[cmc] || [];
+    const hdr = document.createElement('div');
+    hdr.className = 'cmc-header';
+    hdr.innerHTML = `<span class="cmc-num">${cmc === '6+' ? '6+' : cmc} CMC</span><span class="cmc-total">${list.length}</span>`;
+    col.appendChild(hdr);
+    const body = document.createElement('div');
+    body.className = `cmc-cards tint-${colorKey}`;
+    list.forEach(name => {
+      const pill = makeCard(name);
+      body.appendChild(pill);
+      cards.push(pill);
+    });
+    col.appendChild(body);
+    grid.appendChild(col);
+    colEls.push({ el: col, count: list.length });
+  });
+
+  section.appendChild(grid);
+  return { section, cards };
+}
+
+// Count all cards
+function countAll() {
+  let n = 0;
+  Object.values(CUBE).forEach(c => {
+    Object.values(c.creatures||{}).forEach(a => n += a.length);
+    Object.values(c.spells||{}).forEach(a => n += a.length);
+  });
+  Object.values(MULTICOLOR).forEach(g => n += g.cards.length);
+  Object.values(ARTIFACTS).forEach(a => n += a.length);
+  Object.values(LANDS).forEach(a => n += a.length);
+  return n;
+}
+
+// Build curve bars
+function buildCurve(containerId, cmcObj, colorKey) {
+  const cmcLabels = ['1','2','3','4','5','6+','X'];
+  const counts = cmcLabels.map(k => (cmcObj[k]||[]).length);
+  const max = Math.max(...counts, 1);
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  cmcLabels.forEach((label, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'curve-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'curve-bar';
+    const pct = Math.round((counts[i]/max) * 52);
+    bar.style.height = (pct || 2) + 'px';
+    bar.style.background = barColor[colorKey] || 'rgba(201,168,76,0.6)';
+    const num = document.createElement('div');
+    num.className = 'curve-bar-num';
+    num.textContent = counts[i] || '';
+    const lbl = document.createElement('div');
+    lbl.className = 'curve-label';
+    lbl.textContent = label;
+    wrap.appendChild(bar);
+    wrap.appendChild(num);
+    wrap.appendChild(lbl);
+    container.appendChild(wrap);
+  });
+}
+
+// ===================== RENDER =====================
+let allCards = [];
+
+function renderColor(colorKey, panelId) {
+  const data = CUBE[colorKey];
+  const panel = document.getElementById(panelId);
+
+  // Creatures
+  const creHdr = document.createElement('div');
+  creHdr.className = 'section-header';
+  creHdr.innerHTML = `<div class="section-title" style="color:${data.accent}">Creatures</div><div class="section-line" style="background:linear-gradient(90deg,${data.accent}44,transparent)"></div>`;
+  panel.appendChild(creHdr);
+  const { section: creSection, cards: creCards } = buildCMCSection(data.creatures, data.color, data.label);
+  panel.appendChild(creSection);
+  allCards.push(...creCards);
+
+  // Spells
+  const spHdr = document.createElement('div');
+  spHdr.className = 'section-header';
+  spHdr.style.marginTop = '32px';
+  spHdr.innerHTML = `<div class="section-title" style="color:${data.accent}">Spells & Planeswalkers</div><div class="section-line" style="background:linear-gradient(90deg,${data.accent}44,transparent)"></div>`;
+  panel.appendChild(spHdr);
+  const { section: spSection, cards: spCards } = buildCMCSection(data.spells, data.color, data.label);
+  panel.appendChild(spSection);
+  allCards.push(...spCards);
+}
+
+function renderMulticolor() {
+  const panel = document.getElementById('panel-multicolor');
+  const guilds = Object.entries(MULTICOLOR);
+
+  const grid = document.createElement('div');
+  grid.className = 'guild-grid';
+
+  guilds.forEach(([key, guild]) => {
+    const card = document.createElement('div');
+    card.className = 'guild-card';
+    const hdr = document.createElement('div');
+    hdr.className = 'guild-header';
+    const pipsHtml = guild.pips.map(p => `<div class="pip" style="background:${pipColor[p]}"></div>`).join('');
+    hdr.innerHTML = `<span style="font-size:11px">${guild.label}</span><div class="guild-pips">${pipsHtml}</div>`;
+    card.appendChild(hdr);
+    const body = document.createElement('div');
+    body.className = 'guild-body tint-gold';
+    guild.cards.forEach(name => {
+      const pill = makeCard(name);
+      body.appendChild(pill);
+      allCards.push(pill);
+    });
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+
+  panel.appendChild(grid);
+}
+
+function renderArtifacts() {
+  const panel = document.getElementById('panel-artifacts');
+  const { section, cards } = buildCMCSection(ARTIFACTS, 'artifact', 'Artifact');
+  panel.appendChild(section);
+  allCards.push(...cards);
+}
+
+function renderLands() {
+  const panel = document.getElementById('panel-lands');
+  const grid = document.createElement('div');
+  grid.className = 'guild-grid';
+
+  const pairPips = {
+    simic:['u','g'], selesnya:['w','g'], golgari:['b','g'], orzhov:['w','b'], azorius:['w','u'],
+    boros:['r','w'], rakdos:['b','r'], izzet:['u','r'], gruul:['r','g'], dimir:['u','b'],
+    trilands:['w','u','b','r','g']
+  };
+
+  Object.entries(LANDS).forEach(([guild, cards]) => {
+    const card = document.createElement('div');
+    card.className = 'guild-card';
+    const pips = pairPips[guild] || [];
+    const pipsHtml = pips.map(p => `<div class="pip" style="background:${pipColor[p]}"></div>`).join('');
+    const label = guild.charAt(0).toUpperCase()+guild.slice(1);
+    const hdr = document.createElement('div');
+    hdr.className = 'guild-header';
+    hdr.innerHTML = `<span style="font-size:11px">${label}</span><div class="guild-pips">${pipsHtml}</div>`;
+    card.appendChild(hdr);
+    const body = document.createElement('div');
+    body.className = 'guild-body tint-land';
+    cards.forEach(name => {
+      const pill = makeCard(name);
+      body.appendChild(pill);
+      allCards.push(pill);
+    });
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+
+  panel.appendChild(grid);
+}
+
+function renderArchetypes() {
+  const grid = document.getElementById('archetype-grid');
+  ARCHETYPES.forEach(arch => {
+    const card = document.createElement('div');
+    card.className = 'archetype-card';
+    card.style.setProperty('--arch-color', arch.color);
+    card.querySelector = card.querySelector || (() => null);
+
+    const stripe = document.createElement('div');
+    stripe.style.cssText = `position:absolute;top:0;left:0;right:0;height:3px;background:${arch.color};opacity:0.7`;
+    card.appendChild(stripe);
+
+    card.innerHTML += `
+      <div class="archetype-name">${arch.name}</div>
+      <div class="archetype-guild">${arch.guild}</div>
+      <div class="archetype-desc">${arch.desc}</div>
+      <div class="archetype-keys">${arch.keys.map(k=>`<span class="key-tag">${k}</span>`).join('')}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderFullCurve() {
+  const grid = document.getElementById('full-curve-grid');
+  const colorKeys = ['w','u','b','r','g'];
+  const colorNames = { w:'White', u:'Blue', b:'Black', r:'Red', g:'Green' };
+  const colorAccent = { w:'#e8d8b0', u:'#5ab4e8', b:'#9060d0', r:'#e86060', g:'#60cc80' };
+
+  colorKeys.forEach(ck => {
+    const data = CUBE[Object.keys(CUBE).find(k => CUBE[k].color===ck)];
+    if (!data) return;
+    const all = {};
+    ['1','2','3','4','5','6+','X'].forEach(cmc => {
+      all[cmc] = [...(data.creatures[cmc]||[]), ...(data.spells[cmc]||[])];
+    });
+    const max = Math.max(...Object.values(all).map(a=>a.length), 1);
+
+    const card = document.createElement('div');
+    card.className = 'curve-card';
+    card.innerHTML = `<div class="curve-title"><span style="color:${colorAccent[ck]}">◈</span> ${colorNames[ck]}</div>`;
+    const bars = document.createElement('div');
+    bars.className = 'curve-bars';
+    ['1','2','3','4','5','6+','X'].forEach(cmc => {
+      const count = all[cmc]?.length || 0;
+      const wrap = document.createElement('div');
+      wrap.className = 'curve-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'curve-bar';
+      bar.style.height = Math.max(2, Math.round((count/max)*52))+'px';
+      bar.style.background = barColor[ck];
+      const num = document.createElement('div');
+      num.className = 'curve-bar-num';
+      num.textContent = count||'';
+      const lbl = document.createElement('div');
+      lbl.className = 'curve-label';
+      lbl.textContent = cmc;
+      wrap.append(bar, num, lbl);
+      bars.appendChild(wrap);
+    });
+    card.appendChild(bars);
+    grid.appendChild(card);
+  });
+}
+
+function renderOverviewList() {
+  const container = document.getElementById('all-cards-list');
+  allCards.forEach(card => {
+    const clone = makeCard(card.dataset.name.replace(/\b\w/g, c=>c.toUpperCase()));
+    clone.dataset.name = card.dataset.name;
+    container.appendChild(clone);
+  });
+  document.getElementById('all-count').textContent = allCards.length + ' cards';
+  document.getElementById('total-count').textContent = allCards.length;
+}
+
+// ===================== INIT =====================
+renderColor('white','panel-white');
+renderColor('blue','panel-blue');
+renderColor('black','panel-black');
+renderColor('red','panel-red');
+renderColor('green','panel-green');
+renderMulticolor();
+renderArtifacts();
+renderLands();
+renderArchetypes();
+renderFullCurve();
+
+// Mini curves on overview
+['w','u','b','r','g'].forEach(ck => {
+  const key = Object.keys(CUBE).find(k => CUBE[k].color===ck);
+  const data = CUBE[key];
+  const combined = {};
+  ['1','2','3','4','5','6+','X'].forEach(cmc => {
+    combined[cmc] = [...(data.creatures[cmc]||[]), ...(data.spells[cmc]||[])];
+  });
+  buildCurve('curve-'+ck, combined, ck);
+});
+
+renderOverviewList();
+
+// ===================== TABS =====================
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  clearSearch();
+}
+
+// ===================== SEARCH =====================
+const searchInput = document.getElementById('search');
+const searchCount = document.getElementById('search-count');
+
+function clearSearch() {
+  searchInput.value = '';
+  allCards.forEach(c => { c.classList.remove('match','no-match'); });
+  searchCount.textContent = '';
+}
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) { clearSearch(); return; }
+
+  // Show all panels when searching
+  document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-overview').style.display = 'block';
+
+  let matches = 0;
+  allCards.forEach(c => {
+    if (c.dataset.name.includes(q)) {
+      c.classList.add('match');
+      c.classList.remove('no-match');
+      matches++;
+    } else {
+      c.classList.remove('match');
+      c.classList.add('no-match');
+    }
+  });
+
+  // Also search overview clones
+  document.querySelectorAll('#all-cards-list .card-pill').forEach(c => {
+    if (c.dataset.name.includes(q)) {
+      c.classList.add('match');
+      c.classList.remove('no-match');
+    } else {
+      c.classList.remove('match');
+      c.classList.add('no-match');
+    }
+  });
+
+  searchCount.textContent = `${matches} card${matches!==1?'s':''} found`;
+});
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    clearSearch();
+    // Restore active panel
+    document.querySelectorAll('.panel').forEach(p => p.style.display='');
+    const active = document.querySelector('.tab.active');
+    const name = active?.getAttribute('onclick')?.match(/'(\w+)'/)?.[1] || 'overview';
+    document.getElementById('panel-'+name).style.display='block';
+  }
+});
+</script>
+</body>
+</html>
